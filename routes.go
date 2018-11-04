@@ -58,6 +58,7 @@ func XNewRouter() *mux.Router {
 
 var routes = Routes{
 
+	Route{"savetomysql", "GET", "/savetomysql", CopyOrdersToMySQL},
 	Route{"orderlist", "GET", "/orderlist", OrderListV2},
 	Route{"ordercompleted", "GET", "/ordercompleted", ordercompleted},
 	Route{"orderstatus", "GET", "/orderstatus", orderstatus},

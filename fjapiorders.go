@@ -29,7 +29,7 @@ func main() {
 		DB:       0,  // use default DB
 	})
 
-	fmt.Println(">>> Web Server: restauranteAPI.exe running.")
+	fmt.Println(">>> Web Server: fjapiorders.exe (Microservice: Festa Junina - Orders)")
 	fmt.Println("Loading reference data in cache - Redis")
 
 	loadreferencedatainredis()
@@ -41,7 +41,7 @@ func main() {
 	mongodbvar.Location = MongoDBLocation
 	mongodbvar.Database = MongoDBDatabase
 
-	fmt.Println("Running... Listening to " + MSAPIordersPort)
+	fmt.Println("Running... (Microservice: ORDERS) - Listening to " + MSAPIordersPort)
 	fmt.Println("MongoDB location: " + MongoDBLocation)
 	fmt.Println("MongoDB database: " + MongoDBDatabase)
 
