@@ -12,6 +12,10 @@ import (
 	"github.com/go-redis/redis"
 )
 
+var redisclient *redis.Client
+var SYSID string
+var databaseEV DatabaseX
+
 // DatabaseX is a struct
 type DatabaseX struct {
 	Location   string // location of the database localhost, something.com, etc
@@ -28,13 +32,17 @@ type Resultado struct {
 }
 
 // GetRedisPointer returns
-func GetRedisPointer() *redis.Client {
+func GetRedisPointer(bucket int) *redis.Client {
 
-	redisclient := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "", // no password set
-		DB:       0,  // use default DB
-	})
+	bucket = 0
+
+	if redisclient == nil {
+		redisclient = redis.NewClient(&redis.Options{
+			Addr:     "localhost:6379",
+			Password: "",     // no password set
+			DB:       bucket, // use default DB
+		})
+	}
 
 	return redisclient
 }
@@ -53,6 +61,7 @@ type RestEnvVariables struct {
 	CollectionEvents      string // Collection Names
 	MSAPIdishesPort       string // Microservices Port Dishes
 	MSAPIordersPort       string // Microservices Port Orders
+	SYSID                 string // Id of this specific microservice
 }
 
 // Readfileintostruct is
@@ -68,6 +77,28 @@ func Readfileintostruct() RestEnvVariables {
 	return restenv
 }
 
+// GetSYSID is just returning the System ID directly from file
+// It is happening to enable multiple usage of Redis Keys ("SYSID" + "APIURL" for instance)
+func GetSYSID() string {
+
+	if SYSID == "" {
+
+		dat, err := ioutil.ReadFile("fjapiorders.ini")
+		check(err)
+		fmt.Print(string(dat))
+
+		var restenv RestEnvVariables
+
+		json.Unmarshal(dat, &restenv)
+
+		SYSID = restenv.SYSID
+
+		return restenv.SYSID
+	}
+
+	return SYSID
+}
+
 func check(e error) {
 	if e != nil {
 		panic(e)
@@ -78,6 +109,32 @@ type PlayerRegistrationFile struct {
 	FFA  string
 	Name string
 	DOB  string
+}
+
+// Getvaluefromcache returns the value of a key from cache
+func Getvaluefromcache(key string) string {
+
+	// bucket is ZERO for now
+	// I am allowing it to be setup now
+	rp := GetRedisPointer(0)
+
+	sysid := GetSYSID()
+
+	valuetoreturn, _ := rp.Get(sysid + key).Result()
+
+	return valuetoreturn
+}
+
+// GetDBParmFromCache returns the value of a key from cache
+func GetDBParmFromCache(collection string) *DatabaseX {
+
+	database := new(DatabaseX)
+
+	database.Collection = Getvaluefromcache(collection)
+	database.Database = Getvaluefromcache("API.MongoDB.Database")
+	database.Location = Getvaluefromcache("API.MongoDB.Location")
+
+	return database
 }
 
 // Capitalfootball is

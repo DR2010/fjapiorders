@@ -2,9 +2,9 @@ package orders
 
 import (
 	"database/sql"
+	helper "fjapiorders/helper"
 	"fmt"
 	"log"
-	helper "restauranteapi/helper"
 	"strconv"
 
 	"github.com/go-redis/redis"
@@ -54,12 +54,9 @@ type SearchCriteria struct {
 }
 
 // Add is for export
-func Add(redisclient *redis.Client, objtoinsert Order) helper.Resultado {
+func Add(sysid string, redisclient *redis.Client, objtoinsert Order) helper.Resultado {
 
-	database := new(helper.DatabaseX)
-	database.Collection = "orders"
-	database.Database, _ = redisclient.Get("API.MongoDB.Database").Result()
-	database.Location, _ = redisclient.Get("API.MongoDB.Location").Result()
+	database := helper.GetDBParmFromCache("CollectionOrders")
 
 	session, err := mgo.Dial(database.Location)
 	if err != nil {
@@ -87,12 +84,9 @@ func Add(redisclient *redis.Client, objtoinsert Order) helper.Resultado {
 }
 
 // Find is to find stuff
-func Find(redisclient *redis.Client, objtofind string) (Order, string) {
+func Find(sysid string, redisclient *redis.Client, objtofind string) (Order, string) {
 
-	database := new(helper.DatabaseX)
-	database.Collection = "orders"
-	database.Database, _ = redisclient.Get("API.MongoDB.Database").Result()
-	database.Location, _ = redisclient.Get("API.MongoDB.Location").Result()
+	database := helper.GetDBParmFromCache("CollectionOrders")
 
 	objkey := objtofind
 	objnull := Order{}
@@ -124,14 +118,9 @@ func Find(redisclient *redis.Client, objtofind string) (Order, string) {
 }
 
 // Getall works
-func Getall(redisclient *redis.Client) []Order {
+func Getall(sysid string, redisclient *redis.Client) []Order {
 
-	database := new(helper.DatabaseX)
-
-	database.Collection = "orders"
-
-	database.Database, _ = redisclient.Get("API.MongoDB.Database").Result()
-	database.Location, _ = redisclient.Get("API.MongoDB.Location").Result()
+	database := helper.GetDBParmFromCache("CollectionOrders")
 
 	fmt.Println("database.Location")
 	fmt.Println(database.Location)
@@ -165,14 +154,9 @@ func Getall(redisclient *redis.Client) []Order {
 }
 
 // GetallbyUser works
-func GetallbyUser(redisclient *redis.Client, userid string) []Order {
+func GetallbyUser(sysid string, redisclient *redis.Client, userid string) []Order {
 
-	database := new(helper.DatabaseX)
-
-	database.Collection = "orders"
-
-	database.Database, _ = redisclient.Get("API.MongoDB.Database").Result()
-	database.Location, _ = redisclient.Get("API.MongoDB.Location").Result()
+	database := helper.GetDBParmFromCache("CollectionOrders")
 
 	fmt.Println("database.Location")
 	fmt.Println(database.Location)
@@ -206,17 +190,12 @@ func GetallbyUser(redisclient *redis.Client, userid string) []Order {
 }
 
 // GetallbyOrderName works
-func GetallbyOrderName(redisclient *redis.Client, ordername string) []Order {
+func GetallbyOrderName(sysid string, redisclient *redis.Client, ordername string) []Order {
 	// ---------------------------
 	// Show all order for a client
 	// It will help to show the total to pay later
 	// ---------------------------
-	database := new(helper.DatabaseX)
-
-	database.Collection = "orders"
-
-	database.Database, _ = redisclient.Get("API.MongoDB.Database").Result()
-	database.Location, _ = redisclient.Get("API.MongoDB.Location").Result()
+	database := helper.GetDBParmFromCache("CollectionOrders")
 
 	fmt.Println("database.Location")
 	fmt.Println(database.Location)
@@ -250,14 +229,9 @@ func GetallbyOrderName(redisclient *redis.Client, ordername string) []Order {
 }
 
 // Getallcompleted works
-func Getallcompleted(redisclient *redis.Client, status string) []Order {
+func Getallcompleted(sysid string, redisclient *redis.Client, status string) []Order {
 
-	database := new(helper.DatabaseX)
-
-	database.Collection = "orders"
-
-	database.Database, _ = redisclient.Get("API.MongoDB.Database").Result()
-	database.Location, _ = redisclient.Get("API.MongoDB.Location").Result()
+	database := helper.GetDBParmFromCache("CollectionOrders")
 
 	fmt.Println("database.Location")
 	fmt.Println(database.Location)
@@ -291,18 +265,11 @@ func Getallcompleted(redisclient *redis.Client, status string) []Order {
 }
 
 // Getallbutcompleted works
-func Getallbutcompleted(redisclient *redis.Client) []Order {
+func Getallbutcompleted(sysid string, redisclient *redis.Client) []Order {
 
-	database := new(helper.DatabaseX)
 	status := "Completed"
 
-	database.Collection = "orders"
-
-	database.Database, _ = redisclient.Get("API.MongoDB.Database").Result()
-	database.Location, _ = redisclient.Get("API.MongoDB.Location").Result()
-
-	fmt.Println("database.Location")
-	fmt.Println(database.Location)
+	database := helper.GetDBParmFromCache("CollectionOrders")
 
 	session, err := mgo.Dial(database.Location)
 
@@ -338,12 +305,9 @@ func Getallbutcompleted(redisclient *redis.Client) []Order {
 }
 
 // Update is
-func Update(redisclient *redis.Client, objtoupdate Order) helper.Resultado {
+func Update(sysid string, redisclient *redis.Client, objtoupdate Order) helper.Resultado {
 
-	database := new(helper.DatabaseX)
-	database.Collection = "orders"
-	database.Database, _ = redisclient.Get("API.MongoDB.Database").Result()
-	database.Location, _ = redisclient.Get("API.MongoDB.Location").Result()
+	database := helper.GetDBParmFromCache("CollectionOrders")
 
 	session, err := mgo.Dial(database.Location)
 	if err != nil {
@@ -371,13 +335,9 @@ func Update(redisclient *redis.Client, objtoupdate Order) helper.Resultado {
 }
 
 // Delete is
-func Delete(redisclient *redis.Client, objtodeletekey string) helper.Resultado {
+func Delete(sysid string, redisclient *redis.Client, objtodeletekey string) helper.Resultado {
 
-	database := new(helper.DatabaseX)
-	database.Collection = "dishes"
-	database.Database, _ = redisclient.Get("API.MongoDB.Database").Result()
-	database.Location, _ = redisclient.Get("API.MongoDB.Location").Result()
-	database.Collection = "dishes"
+	database := helper.GetDBParmFromCache("CollectionOrders")
 
 	session, err := mgo.Dial(database.Location)
 	if err != nil {
@@ -398,14 +358,14 @@ func Delete(redisclient *redis.Client, objtodeletekey string) helper.Resultado {
 
 	var res helper.Resultado
 	res.ErrorCode = "0001"
-	res.ErrorDescription = "Dish deleted successfully"
+	res.ErrorDescription = "Order deleted successfully"
 	res.IsSuccessful = "Y"
 
 	return res
 }
 
 // SavetoMySQL will save the data from orders to MySQL
-func SavetoMySQL(redisclient *redis.Client, db *sql.DB) {
+func SavetoMySQL(sysid string, redisclient *redis.Client, db *sql.DB) {
 
 	// Created on 19/7/2018
 	// This program will save data to MySQL
@@ -418,7 +378,7 @@ func SavetoMySQL(redisclient *redis.Client, db *sql.DB) {
 
 	statuscompleted := "Completed"
 
-	listoforders := Getallcompleted(redisclient, statuscompleted)
+	listoforders := Getallcompleted(sysid, redisclient, statuscompleted)
 
 	for i := 0; i < len(listoforders); i++ {
 

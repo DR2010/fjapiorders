@@ -18,6 +18,7 @@ var redisclient *redis.Client
 
 var db *sql.DB
 var err error
+var sysid string
 
 // Looks after the main routing
 //
@@ -29,14 +30,20 @@ func main() {
 		DB:       0,  // use default DB
 	})
 
-	fmt.Println(">>> Web Server: fjapiorders.exe (Microservice: Festa Junina - Orders)")
+	fmt.Println(">>> Microservice: fjapiorders.exe (Microservice: Festa Junina - Orders)")
 	fmt.Println("Loading reference data in cache - Redis")
+
+	// -------------------------------------------------
+	sysid = helper.GetSYSID()
+
+	fmt.Println("<><><><> sysid: " + sysid)
+	// -------------------------------------------------
 
 	loadreferencedatainredis()
 
-	MSAPIordersPort, _ := redisclient.Get("MSAPIordersPort").Result()
-	MongoDBLocation, _ := redisclient.Get("API.MongoDB.Location").Result()
-	MongoDBDatabase, _ := redisclient.Get("API.MongoDB.Database").Result()
+	MSAPIordersPort := helper.Getvaluefromcache("MSAPIordersPort")
+	MongoDBLocation := helper.Getvaluefromcache("API.MongoDB.Location")
+	MongoDBDatabase := helper.Getvaluefromcache("API.MongoDB.Database")
 
 	mongodbvar.Location = MongoDBLocation
 	mongodbvar.Database = MongoDBDatabase
@@ -44,6 +51,7 @@ func main() {
 	fmt.Println("Running... (Microservice: ORDERS) - Listening to " + MSAPIordersPort)
 	fmt.Println("MongoDB location: " + MongoDBLocation)
 	fmt.Println("MongoDB database: " + MongoDBDatabase)
+	fmt.Println("SYSID: " + sysid)
 
 	router := XNewRouter()
 
@@ -60,33 +68,26 @@ func main() {
 
 //#region Caching
 
-func loadreferencedatainredisX() {
-
-	// err = client.Set("MongoDB.Location", "{\"MongoDB.Location\":\"192.168.2.180\"}", 0).Err()
-	// err = redisclient.Set("API.MongoDB.Location", "192.168.2.180", 0).Err()
-	err = redisclient.Set("API.MongoDB.Location", "localhost", 0).Err()
-	err = redisclient.Set("API.MongoDB.Database", "restaurante", 0).Err()
-	// err = redisclient.Set("API.APIServer.IPAddress", "192.168.2.170", 0).Err()
-	err = redisclient.Set("API.APIServer.IPAddress", "localhost", 0).Err()
-	err = redisclient.Set("API.APIServer.Port", ":1520", 0).Err()
-}
-
 // This is reading from ini file
 //
 func loadreferencedatainredis() {
 
 	variable := helper.Readfileintostruct()
-	err = redisclient.Set("API.MongoDB.Location", variable.APIMongoDBLocation, 0).Err()
-	err = redisclient.Set("API.MongoDB.Database", variable.APIMongoDBDatabase, 0).Err()
-	err = redisclient.Set("API.APIServer.Port", variable.APIAPIServerPort, 0).Err()
-	err = redisclient.Set("API.APIServer.IPAddress", variable.APIAPIServerIPAddress, 0).Err()
-	err = redisclient.Set("Web.Debug", variable.WEBDebug, 0).Err()
-	err = redisclient.Set("CollectionOrders", variable.CollectionOrders, 0).Err()
-	err = redisclient.Set("CollectionSecurity", variable.CollectionSecurity, 0).Err()
-	err = redisclient.Set("CollectionDishes", variable.CollectionDishes, 0).Err()
-	err = redisclient.Set("CollectionEvents", variable.CollectionEvents, 0).Err()
-	err = redisclient.Set("MSAPIdishesPort", variable.MSAPIdishesPort, 0).Err()
-	err = redisclient.Set("MSAPIordersPort", variable.MSAPIordersPort, 0).Err()
+
+	err = redisclient.Set(sysid+"API.MongoDB.Location", variable.APIMongoDBLocation, 0).Err()
+	err = redisclient.Set(sysid+"API.MongoDB.Database", variable.APIMongoDBDatabase, 0).Err()
+	err = redisclient.Set(sysid+"API.APIServer.Port", variable.APIAPIServerPort, 0).Err()
+	err = redisclient.Set(sysid+"API.APIServer.IPAddress", variable.APIAPIServerIPAddress, 0).Err()
+
+	err = redisclient.Set(sysid+"Web.Debug", variable.WEBDebug, 0).Err()
+
+	err = redisclient.Set(sysid+"CollectionOrders", variable.CollectionOrders, 0).Err()
+	err = redisclient.Set(sysid+"CollectionSecurity", variable.CollectionSecurity, 0).Err()
+	err = redisclient.Set(sysid+"CollectionDishes", variable.CollectionDishes, 0).Err()
+	err = redisclient.Set(sysid+"CollectionEvents", variable.CollectionEvents, 0).Err()
+
+	err = redisclient.Set(sysid+"MSAPIdishesPort", variable.MSAPIdishesPort, 0).Err()
+	err = redisclient.Set(sysid+"MSAPIordersPort", variable.MSAPIordersPort, 0).Err()
 
 }
 
@@ -110,11 +111,11 @@ func getcachedvalues(httpwriter http.ResponseWriter, req *http.Request) {
 
 	var rv = new(rediscachevalues)
 
-	rv.MongoDBLocation, _ = redisclient.Get("API.MongoDB.Location").Result()
-	rv.MongoDBDatabase, _ = redisclient.Get("API.MongoDB.Database").Result()
-	rv.APIServerPort, _ = redisclient.Get("API.APIServer.Port").Result()
-	rv.APIServerIP, _ = redisclient.Get("API.APIServer.IPAddress").Result()
-	rv.WebDebug, _ = redisclient.Get("Web.Debug").Result()
+	rv.MongoDBLocation = helper.Getvaluefromcache("API.MongoDB.Location")
+	rv.MongoDBDatabase = helper.Getvaluefromcache("API.MongoDB.Database")
+	rv.APIServerPort = helper.Getvaluefromcache("API.APIServer.Port")
+	rv.APIServerIP = helper.Getvaluefromcache("API.APIServer.IPAddress")
+	rv.WebDebug = helper.Getvaluefromcache("Web.Debug")
 
 	keys := make([]Cache, 5)
 	keys[0].Key = "API.MongoDB.Location"
