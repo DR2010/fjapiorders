@@ -76,8 +76,6 @@ func loadreferencedatainredis() {
 
 	err = redisclient.Set(sysid+"API.MongoDB.Location", variable.APIMongoDBLocation, 0).Err()
 	err = redisclient.Set(sysid+"API.MongoDB.Database", variable.APIMongoDBDatabase, 0).Err()
-	err = redisclient.Set(sysid+"API.APIServer.Port", variable.APIAPIServerPort, 0).Err()
-	err = redisclient.Set(sysid+"API.APIServer.IPAddress", variable.APIAPIServerIPAddress, 0).Err()
 
 	err = redisclient.Set(sysid+"Web.Debug", variable.WEBDebug, 0).Err()
 

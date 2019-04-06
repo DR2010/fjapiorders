@@ -7,8 +7,6 @@ import (
 	"log"
 	"strconv"
 
-	"github.com/go-redis/redis"
-
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -23,7 +21,9 @@ type Order struct {
 	Date       string        // Order Date
 	Time       string        // Order Time
 	Status     string        // Placed, Serving, Completed, Removed
+	EventID    string        // Every order belongs to an Event (Events are linked to Organisation)
 	EatMode    string        // EatIn, TakeAway, Delivery
+	PickUpTime string        // EatIn, TakeAway, Delivery
 	TotalGeral string        // Delivery phone number
 	Items      []Item
 }
@@ -54,7 +54,7 @@ type SearchCriteria struct {
 }
 
 // Add is for export
-func Add(sysid string, redisclient *redis.Client, objtoinsert Order) helper.Resultado {
+func Add(objtoinsert Order) helper.Resultado {
 
 	database := helper.GetDBParmFromCache("CollectionOrders")
 
@@ -84,7 +84,7 @@ func Add(sysid string, redisclient *redis.Client, objtoinsert Order) helper.Resu
 }
 
 // Find is to find stuff
-func Find(sysid string, redisclient *redis.Client, objtofind string) (Order, string) {
+func Find(objtofind string) (Order, string) {
 
 	database := helper.GetDBParmFromCache("CollectionOrders")
 
@@ -118,7 +118,7 @@ func Find(sysid string, redisclient *redis.Client, objtofind string) (Order, str
 }
 
 // Getall works
-func Getall(sysid string, redisclient *redis.Client) []Order {
+func Getall() []Order {
 
 	database := helper.GetDBParmFromCache("CollectionOrders")
 
@@ -154,7 +154,7 @@ func Getall(sysid string, redisclient *redis.Client) []Order {
 }
 
 // GetallbyUser works
-func GetallbyUser(sysid string, redisclient *redis.Client, userid string) []Order {
+func GetallbyUser(userid string) []Order {
 
 	database := helper.GetDBParmFromCache("CollectionOrders")
 
@@ -190,7 +190,7 @@ func GetallbyUser(sysid string, redisclient *redis.Client, userid string) []Orde
 }
 
 // GetallbyOrderName works
-func GetallbyOrderName(sysid string, redisclient *redis.Client, ordername string) []Order {
+func GetallbyOrderName(ordername string) []Order {
 	// ---------------------------
 	// Show all order for a client
 	// It will help to show the total to pay later
@@ -229,7 +229,7 @@ func GetallbyOrderName(sysid string, redisclient *redis.Client, ordername string
 }
 
 // Getallcompleted works
-func Getallcompleted(sysid string, redisclient *redis.Client, status string) []Order {
+func Getallcompleted(status string) []Order {
 
 	database := helper.GetDBParmFromCache("CollectionOrders")
 
@@ -265,7 +265,7 @@ func Getallcompleted(sysid string, redisclient *redis.Client, status string) []O
 }
 
 // Getallbutcompleted works
-func Getallbutcompleted(sysid string, redisclient *redis.Client) []Order {
+func Getallbutcompleted() []Order {
 
 	status := "Completed"
 
@@ -305,7 +305,7 @@ func Getallbutcompleted(sysid string, redisclient *redis.Client) []Order {
 }
 
 // Update is
-func Update(sysid string, redisclient *redis.Client, objtoupdate Order) helper.Resultado {
+func Update(objtoupdate Order) helper.Resultado {
 
 	database := helper.GetDBParmFromCache("CollectionOrders")
 
@@ -335,7 +335,7 @@ func Update(sysid string, redisclient *redis.Client, objtoupdate Order) helper.R
 }
 
 // Delete is
-func Delete(sysid string, redisclient *redis.Client, objtodeletekey string) helper.Resultado {
+func Delete(objtodeletekey string) helper.Resultado {
 
 	database := helper.GetDBParmFromCache("CollectionOrders")
 
@@ -365,7 +365,7 @@ func Delete(sysid string, redisclient *redis.Client, objtodeletekey string) help
 }
 
 // SavetoMySQL will save the data from orders to MySQL
-func SavetoMySQL(sysid string, redisclient *redis.Client, db *sql.DB) {
+func SavetoMySQL(db *sql.DB) {
 
 	// Created on 19/7/2018
 	// This program will save data to MySQL
@@ -378,7 +378,7 @@ func SavetoMySQL(sysid string, redisclient *redis.Client, db *sql.DB) {
 
 	statuscompleted := "Completed"
 
-	listoforders := Getallcompleted(sysid, redisclient, statuscompleted)
+	listoforders := Getallcompleted(statuscompleted)
 
 	for i := 0; i < len(listoforders); i++ {
 

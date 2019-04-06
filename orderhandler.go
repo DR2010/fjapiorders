@@ -7,13 +7,12 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	orders "fjapiorders/orders"
+	"fjapiorders/security"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
-	"restauranteapi/helper"
-	orders "restauranteapi/orders"
-	"restauranteapi/security"
 	"strconv"
 	"time"
 
@@ -27,15 +26,13 @@ func Hfind(httpwriter http.ResponseWriter, httprequest *http.Request) {
 
 	objtofind := httprequest.FormValue("orderid") // This is the key, must be unique
 
-	objfound, _ = orders.Find(redisclient, objtofind)
+	objfound, _ = orders.Find(objtofind)
 
 	json.NewEncoder(httpwriter).Encode(&objfound)
 }
 
 // Horderfind is
 func Horderfind(httpwriter http.ResponseWriter, httprequest *http.Request) {
-
-	redisclient := helper.GetRedisPointer()
 
 	orderfound := orders.Order{}
 
@@ -47,7 +44,7 @@ func Horderfind(httpwriter http.ResponseWriter, httprequest *http.Request) {
 	fmt.Println("params.Get parmorderid")
 	fmt.Println(parmorderid)
 
-	orderfound, _ = orders.Find(redisclient, ordertofind)
+	orderfound, _ = orders.Find(ordertofind)
 
 	json.NewEncoder(httpwriter).Encode(&orderfound)
 }
@@ -73,6 +70,8 @@ func Horderadd(httpwriter http.ResponseWriter, req *http.Request) {
 		Date       string // Order Date
 		Time       string // Order Time
 		EatMode    string // Delivery, Eat In, Take Away
+		EventID    string // Event ID
+		PickUpTime string // Pick Up Time
 		Status     string // Status
 		Items      []dcOrderItem
 	}
@@ -86,7 +85,7 @@ func Horderadd(httpwriter http.ResponseWriter, req *http.Request) {
 		rand.Seed(time.Now().UTC().UnixNano())
 		objtoaction.ID = strconv.Itoa(rand.Intn(100000))
 
-		_, recordstatus := orders.Find(redisclient, objtoaction.ID)
+		_, recordstatus := orders.Find(objtoaction.ID)
 
 		if recordstatus == "200 OK" {
 			fmt.Println("recordstatus")
@@ -107,6 +106,8 @@ func Horderadd(httpwriter http.ResponseWriter, req *http.Request) {
 	objtoactionMAP.Time = objtoaction.Time
 	objtoactionMAP.Status = objtoaction.Status
 	objtoactionMAP.EatMode = objtoaction.EatMode
+	objtoactionMAP.PickUpTime = objtoaction.PickUpTime
+	objtoactionMAP.EventID = objtoaction.EventID
 
 	var slen = len(objtoaction.Items)
 	objtoactionMAP.Items = make([]orders.Item, slen)
@@ -147,7 +148,7 @@ func Horderadd(httpwriter http.ResponseWriter, req *http.Request) {
 
 	objtoactionMAP.TotalGeral = fmt.Sprintf("%.2f", totalgeral)
 
-	ret := orders.Add(redisclient, objtoactionMAP)
+	ret := orders.Add(objtoactionMAP)
 
 	if ret.IsSuccessful == "Y" {
 		// do something
@@ -185,11 +186,13 @@ func HAPIorderadd(httpwriter http.ResponseWriter, req *http.Request) {
 
 	type dcOrder struct {
 		ID         string // random ID for order, yet to define algorithm
+		EventID    string // Link order to Event/Activity
 		ClientName string // Client Name for the order
 		ClientID   string // Client ID in case they logon - later
 		Date       string // Order Date
 		Time       string // Order Time
 		EatMode    string // Delivery, Eat In, Take Away
+		PickUpTime string // Pickup time
 		Status     string // Status
 		Items      []dcOrderItem
 	}
@@ -271,7 +274,7 @@ func HAPIorderadd(httpwriter http.ResponseWriter, req *http.Request) {
 
 	objtoactionMAP.TotalGeral = fmt.Sprintf("%.2f", totalgeral)
 
-	ret := orders.Add(redisclient, objtoactionMAP)
+	ret := orders.Add(objtoactionMAP)
 
 	if ret.IsSuccessful == "Y" {
 		// do something
@@ -313,7 +316,7 @@ func GenerateNewOrderID() string {
 		rand.Seed(time.Now().UTC().UnixNano())
 		orderid = strconv.Itoa(rand.Intn(100000))
 
-		_, recordstatus := orders.Find(redisclient, orderid)
+		_, recordstatus := orders.Find(orderid)
 
 		if recordstatus == "200 OK" {
 			fmt.Println("recordstatus")
@@ -389,7 +392,7 @@ func Horderupdate(httpwriter http.ResponseWriter, req *http.Request) {
 	var objtoaction orders.Order
 	err = json.Unmarshal(bodybyte, &objtoaction)
 
-	_, recordstatus := orders.Find(redisclient, objtoaction.ID)
+	_, recordstatus := orders.Find(objtoaction.ID)
 
 	if recordstatus == "200 OK" {
 		fmt.Println("recordstatus")
@@ -404,6 +407,8 @@ func Horderupdate(httpwriter http.ResponseWriter, req *http.Request) {
 	objtoactionMAP.Time = objtoaction.Time
 	objtoactionMAP.Status = objtoaction.Status
 	objtoactionMAP.EatMode = objtoaction.EatMode
+	objtoactionMAP.PickUpTime = objtoaction.PickUpTime
+	objtoactionMAP.EventID = objtoaction.EventID
 
 	var slen = len(objtoaction.Items)
 	objtoactionMAP.Items = make([]orders.Item, slen)
@@ -453,7 +458,7 @@ func Horderupdate(httpwriter http.ResponseWriter, req *http.Request) {
 	// objtoactionMAP.TotalGeral = strconv.Itoa(totalgeral)
 	objtoactionMAP.TotalGeral = fmt.Sprintf("%.2f", totalgeral)
 
-	ret := orders.Update(redisclient, objtoactionMAP)
+	ret := orders.Update(objtoactionMAP)
 
 	if ret.IsSuccessful == "Y" {
 		// do something
@@ -494,7 +499,7 @@ func Hdelete(httpwriter http.ResponseWriter, req *http.Request) {
 
 	objtoupdate.ClientID = req.FormValue("orderID") // This is the key, must be unique
 
-	ret := orders.Delete(redisclient, objtoupdate.ClientID)
+	ret := orders.Delete(objtoupdate.ClientID)
 
 	if ret.IsSuccessful == "Y" {
 		// do something
@@ -504,7 +509,7 @@ func Hdelete(httpwriter http.ResponseWriter, req *http.Request) {
 // Halsolist list orders
 func Halsolist(httpwriter http.ResponseWriter, req *http.Request) {
 
-	var orderlist = orders.Getall(redisclient)
+	var orderlist = orders.Getall()
 
 	json.NewEncoder(httpwriter).Encode(&orderlist)
 }
@@ -512,7 +517,7 @@ func Halsolist(httpwriter http.ResponseWriter, req *http.Request) {
 // OrderList also list orders
 func OrderList(httpwriter http.ResponseWriter, req *http.Request) {
 
-	var orderlist = orders.Getall(redisclient)
+	var orderlist = orders.Getall()
 	json.NewEncoder(httpwriter).Encode(&orderlist)
 }
 
@@ -523,10 +528,10 @@ func OrderListV2(httpwriter http.ResponseWriter, req *http.Request) {
 
 	if userid == "" {
 		// orderlist1 := orders.Getall(redisclient)
-		orderlist1 := orders.Getallbutcompleted(redisclient)
+		orderlist1 := orders.Getallbutcompleted()
 		json.NewEncoder(httpwriter).Encode(&orderlist1)
 	} else {
-		orderlist2 := orders.GetallbyUser(redisclient, userid)
+		orderlist2 := orders.GetallbyUser(userid)
 		json.NewEncoder(httpwriter).Encode(&orderlist2)
 	}
 
@@ -547,14 +552,14 @@ func CopyOrdersToMySQL(httpwriter http.ResponseWriter, req *http.Request) {
 		panic(err.Error())
 	}
 
-	orders.SavetoMySQL(redisclient, db)
+	orders.SavetoMySQL(db)
 }
 
 // ordercompleted also list orders
 func ordercompleted(httpwriter http.ResponseWriter, req *http.Request) {
 
 	status := "Completed"
-	orderlist2 := orders.Getallcompleted(redisclient, status)
+	orderlist2 := orders.Getallcompleted(status)
 	json.NewEncoder(httpwriter).Encode(&orderlist2)
 
 	// json.NewEncoder(httpwriter).Encode(&orderlist)
@@ -565,7 +570,7 @@ func orderstatus(httpwriter http.ResponseWriter, req *http.Request) {
 
 	var status = req.FormValue("status")
 
-	orderlist2 := orders.Getallcompleted(redisclient, status)
+	orderlist2 := orders.Getallcompleted(status)
 	json.NewEncoder(httpwriter).Encode(&orderlist2)
 
 	// json.NewEncoder(httpwriter).Encode(&orderlist)
